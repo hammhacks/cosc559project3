@@ -17,8 +17,13 @@ let stars = [];
 let numStars = 500;
 const resetHighscorePosition = { widthOffset: 170, y: 65 };
 
+const saveDataToCSVPosition = { widthOffset: 170, y: 125 };
 let timerValue = 0;
-let bulletCount=0;
+let bulletCount = 0;
+let hitsCount = 0;
+let waveTime = 0;
+let myTable = new p5.Table();
+
 
 function preload() {  
   console.log("Preload");  
@@ -55,9 +60,13 @@ function setup() {
   //getAudioContext().suspend(); // Suspend audio context
   
   createPlayAgainButton();
-  createResetHighScoreButton();  
+  createResetHighScoreButton();
   createStartGameButton();
+
   setInterval(timeIt, 1000);
+  setInterval(waveTimer,1000);
+  createOutputTable();
+  createDownloadPerformanceButton()
   
 }
 
@@ -71,6 +80,10 @@ function draw() {
   background(0);
 
   if (gameOver) {
+    shotsPerMinute = calculateShotsPerMinute(bulletCount,timerValue);
+    accuracy = calculateAccuracy(bulletCount,hitsCount);
+    addTableData(shotsPerMinute,accuracy,score,waveTime,score/waveTime);
+    
     displayGameOver();
   } else {
     updateAndShowGameObjects();
@@ -109,7 +122,8 @@ function resetGame() {
   loadSounds(() => {
     console.log("Game reset and sounds are ready!");
     startGame();
-  });  
+  });
+  waveTime = 0;  
 }
 
 function startGame() {
@@ -134,6 +148,8 @@ function startGame() {
   createAsteroids();
   playAgainButton.hide();
   resetHighScoreButton.hide();
+  createDownloadPerformanceButton.hide();
+  
   loop();
   startRandomUFO();
   
@@ -259,13 +275,8 @@ function displayGameOver() {
     ufo.destroy();
     ufo = null;
   }
-  
-  saveOutputData();
-  console.log("timer data: " + timerValue);
-  console.log("bullets fired: " + bulletCount);
 
-  shotsPerMinute = calculateShotsPerMinute(bulletCount,timerValue);
-  console.log("Shots per minute: " + shotsPerMinute);
+
     
   stopUFOs();
   
@@ -283,6 +294,7 @@ function displayGameOver() {
   }, 1000);
   
   showResetHighScore();
+  showDownloadCSV()
   
   // Unload sounds and then show play again button.
   setTimeout(() => {
@@ -365,6 +377,7 @@ function checkBulletCollisions(i) {
   // Then, check for collision between bullet and asteroids
   for (let j = asteroids.length - 1; j >= 0; j--) {
     if (bullets[i].hits(asteroids[j])) {
+      hitsCount++;
       bullets.splice(i, 1); // Remove the bullet
       asteroids[j].breakup(); // Break asteroid apart
       asteroids.splice(j, 1); // Remove the asteroid from the array
@@ -542,18 +555,32 @@ function incrementScore(amount) {
   displayScore();
 }
 
-function saveOutputData(){
-let myTable = new p5.Table();
+function createOutputTable(){
 // Add columns and rows to the table
-myTable.addColumn("Column 1");
-myTable.addColumn("Column 2");
-let row = myTable.addRow();
-row.set("Column 1", "Value 1");
-row.set("Column 2", "Value 2");
+//myTable.addColumn("shots");
+//myTable.addColumn("hits");
+myTable.addColumn("shots_per_minute");
+myTable.addColumn("accuracy");
+myTable.addColumn("score");
+myTable.addColumn("score_per_minute");
+myTable.addColumn("wave_time");
+//let row = myTable.addRow();
+//row.set("Column 1", "Value 1");
+//row.set("Column 2", "Value 2");
 
-save(myTable, "my_data.csv");
+//save(myTable, "my_data.csv");
 
 
+}
+
+function addTableData(firePerMinuteInput,accuracyInput,scoreInput,waveTimeInput,scorePerMinuteInput){
+  let row = myTable.addRow();
+  row.set("shots_per_minute", firePerMinuteInput);
+  row.set("accuracy", accuracyInput);
+  row.set("score", scoreInput);
+  row.set("score_per_minute", firePerMinuteInput);
+  row.set("wave_time", waveTimeInput);
+  
 }
 
 function timeIt() {
@@ -562,9 +589,40 @@ function timeIt() {
   }
 }
 
+function waveTimer(){
+  if (waveTime >= 0){
+    waveTime++;
+  }
+}
+
 function calculateShotsPerMinute(shotsFired, timeValueInSeconds){
   shotsPerSecond = shotsFired / timeValueInSeconds;
   shotsPerMinute = shotsPerSecond * 60;
 
   return shotsPerMinute;
+}
+
+function calculateAccuracy(inputShots,inputHits){
+  return inputHits/inputShots;
+}
+
+function createDownloadPerformanceButton() {
+  // Create the reset button once
+  createDownloadPerformanceButton = createButton('Download Data');
+  createDownloadPerformanceButton.size(150, 30);   // Smaller size
+  createDownloadPerformanceButton.style('font-size', '14px');
+  createDownloadPerformanceButton.mousePressed(downloadCSV);
+  createDownloadPerformanceButton.hide();
+  createDownloadPerformanceButton.position(
+    width - saveDataToCSVPosition.widthOffset, saveDataToCSVPosition.y);
+}
+
+function downloadCSV() {
+  if (confirm('Are you sure you want to download data?')) {
+    save(myTable, "my_data.csv")
+  }
+}
+
+function showDownloadCSV(){
+  createDownloadPerformanceButton.show();
 }
