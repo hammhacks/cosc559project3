@@ -17,6 +17,7 @@ let stars = [];
 let numStars = 500;
 const resetHighscorePosition = { widthOffset: 170, y: 65 };
 
+//Jeff Hammond: the variables below support the data tracking and export
 const saveDataToCSVPosition = { widthOffset: 170, y: 125 };
 let timerValue = 0;
 let bulletCount = 0;
@@ -63,6 +64,7 @@ function setup() {
   createResetHighScoreButton();
   createStartGameButton();
 
+  //Jeff Hammond: The functions below support the data tracking and export
   setInterval(timeIt, 1000);
   setInterval(waveTimer,1000);
   createOutputTable();
@@ -80,10 +82,11 @@ function draw() {
   background(0);
 
   if (gameOver) {
+    //Jeff Hammond: The variables and functions below support the data capture and export
     shotsPerMinute = calculateShotsPerMinute(bulletCount,timerValue);
     accuracy = calculateAccuracy(bulletCount,hitsCount);
     addTableData(shotsPerMinute,accuracy,score,waveTime,score/waveTime);
-    
+
     displayGameOver();
   } else {
     updateAndShowGameObjects();
@@ -183,7 +186,7 @@ function fireBullet()
   const bulletColor = [255, 0, 0];
   bullets.push(new Bullet(ship.pos.copy(), ship.heading, bulletColor));   
   playSound(bulletSound);
-  bulletCount++;
+  bulletCount++; //Jeff Hammond: added in bulletCount++ here to capture numeric count (list count didn't work)
 }
 
 function keyReleased() {
@@ -294,7 +297,7 @@ function displayGameOver() {
   }, 1000);
   
   showResetHighScore();
-  showDownloadCSV()
+  showDownloadCSV(); //Jeff Hammond: after the game is over, showDownloadCSV() runs to show button
   
   // Unload sounds and then show play again button.
   setTimeout(() => {
@@ -377,7 +380,7 @@ function checkBulletCollisions(i) {
   // Then, check for collision between bullet and asteroids
   for (let j = asteroids.length - 1; j >= 0; j--) {
     if (bullets[i].hits(asteroids[j])) {
-      hitsCount++;
+      hitsCount++;//Jeff Hammond: added in hitsCount to help capture accuracy
       bullets.splice(i, 1); // Remove the bullet
       asteroids[j].breakup(); // Break asteroid apart
       asteroids.splice(j, 1); // Remove the asteroid from the array
@@ -555,21 +558,16 @@ function incrementScore(amount) {
   displayScore();
 }
 
+/* Jeff Hammond: the functions and variables below all support data counting and capture
+to support the CSV export process to better understand the data */
+
 function createOutputTable(){
-// Add columns and rows to the table
-//myTable.addColumn("shots");
-//myTable.addColumn("hits");
+
 myTable.addColumn("shots_per_minute");
 myTable.addColumn("accuracy");
 myTable.addColumn("score");
 myTable.addColumn("score_per_minute");
 myTable.addColumn("wave_time");
-//let row = myTable.addRow();
-//row.set("Column 1", "Value 1");
-//row.set("Column 2", "Value 2");
-
-//save(myTable, "my_data.csv");
-
 
 }
 
@@ -607,9 +605,8 @@ function calculateAccuracy(inputShots,inputHits){
 }
 
 function createDownloadPerformanceButton() {
-  // Create the reset button once
   createDownloadPerformanceButton = createButton('Download Data');
-  createDownloadPerformanceButton.size(150, 30);   // Smaller size
+  createDownloadPerformanceButton.size(150, 30);
   createDownloadPerformanceButton.style('font-size', '14px');
   createDownloadPerformanceButton.mousePressed(downloadCSV);
   createDownloadPerformanceButton.hide();
