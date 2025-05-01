@@ -263,6 +263,9 @@ function displayGameOver() {
   saveOutputData();
   console.log("timer data: " + timerValue);
   console.log("bullets fired: " + bulletCount);
+
+  shotsPerMinute = calculateShotsPerMinute(bulletCount,timerValue);
+  console.log("Shots per minute: " + shotsPerMinute);
     
   stopUFOs();
   
@@ -557,4 +560,11 @@ function timeIt() {
   if (timerValue >= 0) {
     timerValue++;
   }
+}
+
+function calculateShotsPerMinute(shotsFired, timeValueInSeconds){
+  shotsPerSecond = shotsFired / timeValueInSeconds;
+  shotsPerMinute = shotsPerSecond * 60;
+
+  return shotsPerMinute;
 }
