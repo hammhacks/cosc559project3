@@ -1,4 +1,10 @@
+const WEAPON_COOLDOWN_TIME = 80;
+const WEAPON_TEMP_ADDEND = 50;
+const WEAPON_MAX_SAFE_TEMP = 1000;
+const WEAPON_TEMP_DECREASE_STEP = 1;
+
 class Ship {
+    
   constructor() {
     this.pos = createVector(width / 2, height / 2);
     this.vel = createVector(0, 0);
@@ -9,6 +15,9 @@ class Ship {
     this.health = 100;
     this.size = 50;
     this.color = color(200);
+    this.weaponTemp = 0;
+    //time that the player cannot shoot before guns cooldown
+    this.weaponTempCooldownTime = WEAPON_COOLDOWN_TIME;
   }
 
   update() {
@@ -17,6 +26,7 @@ class Ship {
     this.pos.add(this.vel);
     this.vel.mult(0.99);
     this.edges();
+    this.weaponTempCooldown();
   }
 
   show() {
@@ -138,4 +148,35 @@ class Ship {
     }
   }
   
+  increaseWeaponTemp() {
+
+    this.weaponCooldownTime = WEAPON_COOLDOWN_TIME;
+    this.weaponTemp = this.weaponTemp + WEAPON_TEMP_ADDEND;
+    if(this.weaponTemp > WEAPON_MAX_SAFE_TEMP) {
+
+      let lifeSubtrahend = Math.ceil((this.weaponTemp / WEAPON_MAX_SAFE_TEMP) * 2);
+      this.health = this.health - lifeSubtrahend;
+      
+    }
+    
+  }
+  
+  weaponTempCooldown() {
+
+    if(this.weaponCooldownTime == 0 && this.weaponTemp > 0) {
+  
+      this.weaponTemp = this.weaponTemp - WEAPON_TEMP_DECREASE_STEP;
+      
+    } else this.weaponCooldownTime = this.weaponCooldownTime - 1;
+    
+  }
+  
 }
+/*
+
+Weapon temperature mechanic:
+When the player shoots, the weapon's temperature increases. If the player shoots after their weapon temp has reached 1000, they will lose more and more life the hotter their gun is.
+
+The player has to go a certain time before their weapon temp drops. The 
+
+*/

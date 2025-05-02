@@ -3,6 +3,7 @@ let highScoreID = "highScore" + appVersion;
 let levelID = "level" + appVersion;
 let levelThresholdID = "levelThreshold" + appVersion;
 let scoreID = "score" + appVersion;
+
 let pauseGame = true;
 let ship;
 let ufo;
@@ -16,17 +17,27 @@ let startGameButton;
 let playAgainButton;
 let winGame = false;
 let score = localStorage.getItem(scoreID) ? parseInt(localStorage.getItem(scoreID)) : 0;
-let startScore = 0;
+let startScore = localStorage.getItem(scoreID) ? parseInt(localStorage.getItem(scoreID)) : 0;
 let highScore = localStorage.getItem(highScoreID) ? parseInt(localStorage.getItem(highScoreID)) : 0;
 let stars = [];
 let numStars = 500;
 const resetHighscorePosition = { widthOffset: 170, y: 65 };
+let gameOverDisplayed = false;
 
-//Jeff Hammond: the variables below support the data tracking and export
+const defaultLevel = 1;
+const defaultLevelUpThreshold = 1000;
+let level = localStorage.getItem(levelID) ? parseInt(localStorage.getItem(levelID)) : defaultLevel;
+let levelUpThreshold = localStorage.getItem(levelThresholdID) ? parseInt(localStorage.getItem(levelThresholdID)) : defaultLevelUpThreshold; // Points needed to reach the next level
+let levelUpMessage = "";
+let levelUpMessageTimer = 0;
+const baseAsteroidSpeed = 1.5; // starting asteroid speed
+
+// Jeff Hammond: the variables below support the data tracking and export
 const saveDataToCSVPosition = { widthOffset: 170, y: 125 };
 let timerValue = 0;
 let bulletCount = 0;
 let hitsCount = 0;
+
 let waveTime = 0;
 let myTable = new p5.Table();
 
@@ -73,17 +84,11 @@ function setup() {
   createCanvas(canvaseSize.x, canvaseSize.y);
   
   // If sound gets crashy - turn it off with this...
-  //getAudioContext().suspend(); // Suspend audio context
+  getAudioContext().suspend(); // Suspend audio context
   
   createPlayAgainButton();
-  createResetHighScoreButton();
-  createStartGameButton();
-
-  //Jeff Hammond: The functions below support the data tracking and export
-  setInterval(timeIt, 1000);
-  setInterval(waveTimer,1000);
-  createOutputTable();
-  createDownloadPerformanceButton()
+  createResetHighScoreButton();  
+  createStartGameButton(); 
   
 }
 
@@ -97,31 +102,27 @@ function draw() {
   background(0);
 
   if (gameOver) {
-    //Jeff Hammond: The variables and functions below support the data capture and export
-    shotsPerMinute = calculateShotsPerMinute(bulletCount,timerValue);
-    accuracy = calculateAccuracy(bulletCount,hitsCount);
-    addTableData(shotsPerMinute,accuracy,score,waveTime,score/waveTime);
-
+    // Jeff Hammond: the variables and functions below support the data capture and export
+    shotsPerMinute = calculateShotsPerMinute(bulletCount, timerValue);
+    accuracy = calculateAccuracy(bulletCount, hitsCount);
+    addTableData(shotsPerMinute, accuracy, score, waveTime, score / waveTime);
     displayGameOver();
-    displayLevelUp();
-
   } else {
     updateAndShowGameObjects();
   }
 
   displayScore();
   displayHealth();
+  displayWeaponTemp();
 }
 
 
 function resetGame() {
   
-  startScore = score;
-  levelUpMessageTimer = 0;
-
+  score = 0;
+  
   winGame = false;
   gameOver = false;
-  gameOverDisplayed = false;
 
   // Clear bullets, UFO bullets, and asteroids
   asteroids = [];
@@ -144,14 +145,12 @@ function resetGame() {
   loadSounds(() => {
     console.log("Game reset and sounds are ready!");
     startGame();
-  });
-  waveTime = 0;  
+  });  
 }
 
 function startGame() {
   
   pauseGame = false;
-  startSeconds = second();
   
   if(startGameButton) {
     startGameButton.hide();
@@ -170,8 +169,6 @@ function startGame() {
   createAsteroids();
   playAgainButton.hide();
   resetHighScoreButton.hide();
-  createDownloadPerformanceButton.hide();
-  
   loop();
   startRandomUFO();
   
@@ -200,26 +197,10 @@ function keyPressed() {
   }
 }
 
-function fireBullet()
-{
+function fireBullet() {
+  
   const bulletColor = [255, 0, 0];
-  
-  bullets.push(new Bullet(ship.pos.copy(), ship.heading, bulletColor));               // straight
-
-  // Danny Smith: Added more bullets to fire in a spray pattern bc it was almost impossible
-  // to move up levels just shooting one.
-  if (level > 3) {
-    const spreadAngle = 0.1; // radians (about 5-6 degrees)
-    bullets.push(new Bullet(ship.pos.copy(), ship.heading - spreadAngle, bulletColor)); // slight left
-    bullets.push(new Bullet(ship.pos.copy(), ship.heading + spreadAngle, bulletColor)); // slight right
-  }
- 
-  if (level > 10) {
-    const spreadAngle2 = 0.23; // radians
-    bullets.push(new Bullet(ship.pos.copy(), ship.heading - spreadAngle2, bulletColor)); // slight left
-    bullets.push(new Bullet(ship.pos.copy(), ship.heading + spreadAngle2, bulletColor)); // slight right
-  }  
-  
+  bullets.push(new Bullet(ship.pos.copy(), ship.heading, bulletColor));   
   playSound(bulletSound);
   bulletCount++; //Jeff Hammond: added in bulletCount++ here to capture numeric count (list count didn't work)
 }
@@ -238,10 +219,6 @@ function keyReleased() {
 }
 
 function createAsteroids() {
- 
-  // Danny Smith: increase asteroid count when going up a level.
-  updateAsteroidCountByLevel();
-	
   for (let i = 0; i < asteroidCount; i++) {
     let asteroid = new Asteroid();
     while (dist(asteroid.pos.x, asteroid.pos.y, ship.pos.x, ship.pos.y) < 150) {
@@ -288,17 +265,9 @@ function createResetHighScoreButton() {
 
 function displayGameOver() {
   
-  console.log("displayGameOver called. winGame =", winGame, "gameOver =", gameOver, "score =", score);
-  
-  if (gameOverDisplayed) { 
-    return true;
-  } 
-  
   let message = "";  // Store win/loss message
   let messageColor;
   
-  gameOverDisplayed = true;
-
   stopSound(gameplaySound);
   stopSound(thrustSound);
   
@@ -307,29 +276,14 @@ function displayGameOver() {
 
   endSeconds = second();
 
-  if (winGame) {
+  if (winGame){
     console.log("You Win!");
     updateHighScore();
     playSound(youWinSound);
     message = "You Win!";
     messageColor = color(0, 255, 0);  // Green for win
-	
-	// Danny Smith: Saving score and leveling up if user won the game and threshold passed.
-    localStorage.setItem(scoreID, score);
-    
-    // Leveling up? Only level up if score is high enough and user won game.
-    if (score >= levelUpThreshold) {
-      levelUp();      
-    } else {
-      console.log(`Won, but not enough score to level up. Staying on level ${level}`);
-    }	
   }
   else {
-	  
-	// Danny Smith
-    // If you lose, your score goes back to what is was before.
-    score = startScore;  
-	  
     console.log("You Lose!");
     playSound(youLoseSound);
     message = "You lose!";
@@ -340,11 +294,8 @@ function displayGameOver() {
     ufo.destroy();
     ufo = null;
   }
-
-
     
   stopUFOs();
-  
 
   // Show Game Over.
   setTimeout(() => {
@@ -359,15 +310,11 @@ function displayGameOver() {
   }, 1000);
   
   showResetHighScore();
-  showDownloadCSV(); //Jeff Hammond: after the game is over, showDownloadCSV() runs to show button
   
   // Unload sounds and then show play again button.
   setTimeout(() => {
     unloadSounds(showPlayAgain);
-  }, 3000);
-  
-
-
+  }, 3000);    
 
 }
 
@@ -377,45 +324,6 @@ function showPlayAgain() {
 
 function showResetHighScore() {
   resetHighScoreButton.show();
-}
-
-// Danny Smith: Added levelUp()
-function levelUp() {    
-  level++;
-  localStorage.setItem(levelID, level);  
-  console.log(`Leveling up! New level: ${level}`);
-  
-  levelUpMessage = "Level Up!";
-  levelUpMessageTimer = 180; // show for about 3 seconds at 60fps            
-  console.log(`Leveling up! New level: ${level}`);
-  
-  levelUpThreshold += (level * 1500); // Raise threshold each time
-  localStorage.setItem(levelUpThreshold, levelUpThreshold);
-  console.log("levelUpThreshold", levelUpThreshold);
-}                               
-
-// Danny Smith: Added updateAsteroidCountByLevel()
-function updateAsteroidCountByLevel() {
-  let count = 5;
-  let increment = 2;
-  
-  for (let i = 1; i < level; i++) {
-    count += increment;
-    increment++;
-  }
-  
-  asteroidCount = count;
-}
-
-// Danny Smith: Added displayLevelUp()
-function displayLevelUp() { 
-  if (levelUpMessageTimer > 0) {
-    textAlign(CENTER, CENTER);
-    textSize(48);
-    fill(255, 215, 0); // Gold color
-    text(levelUpMessage, width / 2, height / 2 - 100);
-    levelUpMessageTimer--;
-  }
 }
 
 function updateAndShowGameObjects() {
@@ -481,7 +389,6 @@ function checkBulletCollisions(i) {
   // Then, check for collision between bullet and asteroids
   for (let j = asteroids.length - 1; j >= 0; j--) {
     if (bullets[i].hits(asteroids[j])) {
-      hitsCount++;//Jeff Hammond: added in hitsCount to help capture accuracy
       bullets.splice(i, 1); // Remove the bullet
       asteroids[j].breakup(); // Break asteroid apart
       asteroids.splice(j, 1); // Remove the asteroid from the array
@@ -595,12 +502,11 @@ function displayScore() {
   fill(255);
   textSize(20);
   textAlign(LEFT);
-  text(`Score: ${score}    Level: ${level}`, 20, 30); // Danny: added Level display
+  text(`Score: ${score}`, 20, 30);
 
   // Display high score
   textAlign(RIGHT);
-  text(`High Score: ${highScore}`, width - 20, 30);
-
+  text(`High Score: ${highScore}`, width - 20, 30);  
 }
 
 function displayHealth() {
@@ -635,7 +541,7 @@ function displayHealth() {
 function updateHighScore() {
   if (score > highScore) {
     highScore = score;  
-    localStorage.setItem(highScoreID, highScore);  
+    localStorage.setItem(highScoreID, highScore);
   }  
 }
 
@@ -668,68 +574,11 @@ function incrementScore(amount) {
   displayScore();
 }
 
-/* Jeff Hammond: the functions and variables below all support data counting and capture
-to support the CSV export process to better understand the data */
-
-function createOutputTable(){
-
-myTable.addColumn("shots_per_minute");
-myTable.addColumn("accuracy");
-myTable.addColumn("score");
-myTable.addColumn("score_per_minute");
-myTable.addColumn("wave_time");
-
-}
-
-function addTableData(firePerMinuteInput,accuracyInput,scoreInput,waveTimeInput,scorePerMinuteInput){
-  let row = myTable.addRow();
-  row.set("shots_per_minute", firePerMinuteInput);
-  row.set("accuracy", accuracyInput);
-  row.set("score", scoreInput);
-  row.set("score_per_minute", firePerMinuteInput);
-  row.set("wave_time", waveTimeInput);
+function displayWeaponTemp() {
   
-}
-
-function timeIt() {
-  if (timerValue >= 0) {
-    timerValue++;
-  }
-}
-
-function waveTimer(){
-  if (waveTime >= 0){
-    waveTime++;
-  }
-}
-
-function calculateShotsPerMinute(shotsFired, timeValueInSeconds){
-  shotsPerSecond = shotsFired / timeValueInSeconds;
-  shotsPerMinute = shotsPerSecond * 60;
-
-  return shotsPerMinute;
-}
-
-function calculateAccuracy(inputShots,inputHits){
-  return inputHits/inputShots;
-}
-
-function createDownloadPerformanceButton() {
-  createDownloadPerformanceButton = createButton('Download Data');
-  createDownloadPerformanceButton.size(150, 30);
-  createDownloadPerformanceButton.style('font-size', '14px');
-  createDownloadPerformanceButton.mousePressed(downloadCSV);
-  createDownloadPerformanceButton.hide();
-  createDownloadPerformanceButton.position(
-    width - saveDataToCSVPosition.widthOffset, saveDataToCSVPosition.y);
-}
-
-function downloadCSV() {
-  if (confirm('Are you sure you want to download data?')) {
-    save(myTable, "my_data.csv")
-  }
-}
-
-function showDownloadCSV(){
-  createDownloadPerformanceButton.show();
+  fill(255);
+  textSize(20);
+  textAlign(LEFT);
+  text(`Weapon Temperature: ${ship.weaponTemp}`, 20, 130);
+  
 }
