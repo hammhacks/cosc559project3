@@ -1,9 +1,4 @@
-const appVersion = "v3";
-let highScoreID = "highScore" + appVersion;
-let levelID = "level" + appVersion;
-let levelThresholdID = "levelThreshold" + appVersion;
-let scoreID = "score" + appVersion;
-
+const highScoreID = "highScorev1";
 let pauseGame = true;
 let ship;
 let ufo;
@@ -17,39 +12,19 @@ let startGameButton;
 let playAgainButton;
 let winGame = false;
 let score = localStorage.getItem(scoreID) ? parseInt(localStorage.getItem(scoreID)) : 0;
-let startScore = localStorage.getItem(scoreID) ? parseInt(localStorage.getItem(scoreID)) : 0;
+let startScore = 0;
 let highScore = localStorage.getItem(highScoreID) ? parseInt(localStorage.getItem(highScoreID)) : 0;
 let stars = [];
 let numStars = 500;
 const resetHighscorePosition = { widthOffset: 170, y: 65 };
-let gameOverDisplayed = false;
 
-const defaultLevel = 1;
-const defaultLevelUpThreshold = 1000;
-let level = localStorage.getItem(levelID) ? parseInt(localStorage.getItem(levelID)) : defaultLevel;
-let levelUpThreshold = localStorage.getItem(levelThresholdID) ? parseInt(localStorage.getItem(levelThresholdID)) : defaultLevelUpThreshold; // Points needed to reach the next level
-let levelUpMessage = "";
-let levelUpMessageTimer = 0;
-const baseAsteroidSpeed = 1.5; // starting asteroid speed
-
-// Jeff Hammond: the variables below support the data tracking and export
+//Jeff Hammond: the variables below support the data tracking and export
 const saveDataToCSVPosition = { widthOffset: 170, y: 125 };
 let timerValue = 0;
 let bulletCount = 0;
 let hitsCount = 0;
-
 let waveTime = 0;
 let myTable = new p5.Table();
-
-// Danny Smith: the variables below are for adding multi levels
-let gameOverDisplayed = false;
-const defaultLevel = 1;
-const defaultLevelUpThreshold = 1000;
-let level = localStorage.getItem(levelID) ? parseInt(localStorage.getItem(levelID)) : defaultLevel;
-let levelUpThreshold = localStorage.getItem(levelThresholdID) ? parseInt(localStorage.getItem(levelThresholdID)) : defaultLevelUpThreshold; // Points needed to reach the next level
-let levelUpMessage = "";
-let levelUpMessageTimer = 0;
-const baseAsteroidSpeed = 1.5; // starting asteroid speed
 
 
 function preload() {  
@@ -102,10 +77,6 @@ function draw() {
   background(0);
 
   if (gameOver) {
-    // Jeff Hammond: the variables and functions below support the data capture and export
-    shotsPerMinute = calculateShotsPerMinute(bulletCount, timerValue);
-    accuracy = calculateAccuracy(bulletCount, hitsCount);
-    addTableData(shotsPerMinute, accuracy, score, waveTime, score / waveTime);
     displayGameOver();
   } else {
     updateAndShowGameObjects();
@@ -219,6 +190,10 @@ function keyReleased() {
 }
 
 function createAsteroids() {
+
+  // Danny Smith: increase asteroid count when going up a level.
+  updateAsteroidCountByLevel();
+  
   for (let i = 0; i < asteroidCount; i++) {
     let asteroid = new Asteroid();
     while (dist(asteroid.pos.x, asteroid.pos.y, ship.pos.x, ship.pos.y) < 150) {
