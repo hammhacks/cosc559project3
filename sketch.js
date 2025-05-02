@@ -22,22 +22,6 @@ let highScore = localStorage.getItem(highScoreID) ? parseInt(localStorage.getIte
 let stars = [];
 let numStars = 500;
 const resetHighscorePosition = { widthOffset: 170, y: 65 };
-let gameOverDisplayed = false;
-
-const defaultLevel = 1;
-const defaultLevelUpThreshold = 1000;
-let level = localStorage.getItem(levelID) ? parseInt(localStorage.getItem(levelID)) : defaultLevel;
-let levelUpThreshold = localStorage.getItem(levelThresholdID) ? parseInt(localStorage.getItem(levelThresholdID)) : defaultLevelUpThreshold; // Points needed to reach the next level
-let levelUpMessage = "";
-let levelUpMessageTimer = 0;
-const baseAsteroidSpeed = 1.5; // starting asteroid speed
-//Jeff Hammond: the variables below support the data tracking and export
-const saveDataToCSVPosition = { widthOffset: 170, y: 125 };
-let timerValue = 0;
-let bulletCount = 0;
-let hitsCount = 0;
-let waveTime = 0;
-let myTable = new p5.Table();
 
 // Danny Smith: the variables below are for adding multi levels
 let gameOverDisplayed = false;
@@ -48,6 +32,14 @@ let levelUpThreshold = localStorage.getItem(levelThresholdID) ? parseInt(localSt
 let levelUpMessage = "";
 let levelUpMessageTimer = 0;
 const baseAsteroidSpeed = 1.5; // starting asteroid speed
+
+//Jeff Hammond: the variables below support the data tracking and export
+const saveDataToCSVPosition = { widthOffset: 170, y: 125 };
+let timerValue = 0;
+let bulletCount = 0;
+let hitsCount = 0;
+let waveTime = 0;
+let myTable = new p5.Table();
 
 function preload() {  
   console.log("Preload");  
@@ -647,4 +639,5 @@ function displayWeaponTemp() {
   textAlign(LEFT);
   text(`Weapon Temperature: ${ship.weaponTemp}`, 20, 130);
   
+}
 }
