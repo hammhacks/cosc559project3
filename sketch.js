@@ -42,14 +42,6 @@ let levelUpMessage = "";
 let levelUpMessageTimer = 0;
 const baseAsteroidSpeed = 1.5; // starting asteroid speed
 
-//Jeff Hammond: the variables below support the data tracking and export
-const saveDataToCSVPosition = { widthOffset: 170, y: 125 };
-let timerValue = 0;
-let bulletCount = 0;
-let hitsCount = 0;
-let waveTime = 0;
-let myTable = new p5.Table();
-
 function preload() {  
   console.log("Preload");  
   loadSounds();
@@ -735,4 +727,3 @@ function createOutputTable(){
   function showDownloadCSV(){
     createDownloadPerformanceButton.show();
   }
-}
