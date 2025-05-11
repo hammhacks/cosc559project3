@@ -18,6 +18,7 @@ class Ship {
     this.weaponTemp = 0;
     //time that the player cannot shoot before guns cooldown
     this.weaponTempCooldownTime = WEAPON_COOLDOWN_TIME;
+
   }
 
   update() {

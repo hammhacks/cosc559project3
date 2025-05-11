@@ -3,6 +3,7 @@ let highScoreID = "highScore" + appVersion;
 let levelID = "level" + appVersion;
 let levelThresholdID = "levelThreshold" + appVersion;
 let scoreID = "score" + appVersion;
+let useCooldown;
 
 let pauseGame = true;
 let ship;
@@ -30,6 +31,8 @@ let bulletCount = 0;
 let hitsCount = 0;
 let waveTime = 0;
 let myTable = new p5.Table();
+
+const useCooldownPosition = { widthOffset: 170, y: 250 };
 
 // Danny Smith: the variables below are for adding multi levels
 let gameOverDisplayed = false;
@@ -69,8 +72,12 @@ function windowResized() {
   if (showDownloadCSV){
     showDownloadCSV.position(
       width - saveDataToCSVPosition.widthOffset, saveDataToCSVPosition.y);
-    
   }
+
+  /*if(useCooldownFunctionalityButton){
+    useCooldownFunctionalityButton.position(
+      width - useCooldownPosition.widthOffset, useCooldownPosition.y);
+  } */
   createStars();
 }
 
@@ -91,6 +98,7 @@ function setup() {
   setInterval(waveTimer,1000);
   createOutputTable();
   createDownloadPerformanceButton()
+  useCooldownFunctionalityButton()
   
 }
 
@@ -172,8 +180,14 @@ function startGame() {
     createDownloadPerformanceButton.hide();
   }
   startRandomUFO();
-  
-  ship = new Ship();
+  console.log("use cooldown: " + useCooldown)
+  if (useCooldown){
+      ship = new Ship(true);
+  }
+  else{
+      ship = new Ship(false);
+  }
+
   ufo = null;
 
   createStars();  
@@ -230,9 +244,11 @@ function fireBullet() {
     const spreadAngle2 = 0.23; // radians
     bullets.push(new Bullet(ship.pos.copy(), ship.heading - spreadAngle2, bulletColor)); // slight left
     bullets.push(new Bullet(ship.pos.copy(), ship.heading + spreadAngle2, bulletColor)); // slight right
-  }  
-  
+  }
+
+  if (useCooldown){
   ship.increaseWeaponTemp();
+  }
   
   playSound(bulletSound);
   bulletCount++; //Jeff Hammond: added in bulletCount++ here to capture numeric count (list count didn't work) 
@@ -687,6 +703,7 @@ function createOutputTable(){
   myTable.addColumn("score_per_minute");
   myTable.addColumn("wave_time");
   myTable.addColumn("level")
+  myTable.addColumn("cooldown_used");
   
   }
   
@@ -698,6 +715,7 @@ function createOutputTable(){
     row.set("score_per_minute", firePerMinuteInput);
     row.set("wave_time", waveTimeInput);
     row.set("level",level);
+    row.set("cooldown_used",useCooldown);
     
   }
   
@@ -742,4 +760,19 @@ function createOutputTable(){
   
   function showDownloadCSV(){
     createDownloadPerformanceButton.show();
+  }
+
+  function useCooldownPrompt() {
+    confirm('Use cooldown functionality')
+  }
+
+  function useCooldownFunctionalityButton() {
+    useCooldownFunctionalityButton = createButton('Use cooldown functionality');
+    useCooldownFunctionalityButton.size(150, 30);
+    useCooldownFunctionalityButton.style('font-size', '14px');
+    //useCooldown= useCooldownFunctionalityButton.mousePressed(confirm('Use cooldown functionality'));
+    useCooldown = confirm('Use cooldown functionality?');
+    useCooldownFunctionalityButton.hide();
+    useCooldownFunctionalityButton.position(
+      width - useCooldownPosition.widthOffset, useCooldownPosition.y);
   }
