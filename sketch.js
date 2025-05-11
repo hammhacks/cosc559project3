@@ -65,6 +65,12 @@ function windowResized() {
     resetHighScoreButton.position(
       width - resetHighscorePosition.widthOffset, resetHighscorePosition.y);
   }
+
+  if (showDownloadCSV){
+    showDownloadCSV.position(
+      width - saveDataToCSVPosition.widthOffset, saveDataToCSVPosition.y);
+    
+  }
   createStars();
 }
 
@@ -102,6 +108,13 @@ function draw() {
     shotsPerMinute = calculateShotsPerMinute(bulletCount,timerValue);
     accuracy = calculateAccuracy(bulletCount,hitsCount);
     addTableData(shotsPerMinute,accuracy,score,waveTime,score/waveTime);
+
+    bulletCount = 0
+    timerValue = 0
+    hitsCount = 0
+    shotsPerMinute = 0
+    accuracy = 0
+    waveTime = 0
 
     displayGameOver();
     displayLevelUp();
@@ -156,6 +169,7 @@ function startGame() {
   
   if(startGameButton) {
     startGameButton.hide();
+    createDownloadPerformanceButton.hide();
   }
   startRandomUFO();
   
@@ -672,6 +686,7 @@ function createOutputTable(){
   myTable.addColumn("score");
   myTable.addColumn("score_per_minute");
   myTable.addColumn("wave_time");
+  myTable.addColumn("level")
   
   }
   
@@ -682,6 +697,7 @@ function createOutputTable(){
     row.set("score", scoreInput);
     row.set("score_per_minute", firePerMinuteInput);
     row.set("wave_time", waveTimeInput);
+    row.set("level",level);
     
   }
   
