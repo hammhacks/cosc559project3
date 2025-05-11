@@ -30,6 +30,7 @@ let timerValue = 0;
 let bulletCount = 0;
 let hitsCount = 0;
 let waveTime = 0;
+let ufosDusted = 0;
 let myTable = new p5.Table();
 
 const useCooldownPosition = { widthOffset: 170, y: 250 };
@@ -117,12 +118,13 @@ function draw() {
     accuracy = calculateAccuracy(bulletCount,hitsCount);
     addTableData(shotsPerMinute,accuracy,score,waveTime,score/waveTime);
 
-    bulletCount = 0
-    timerValue = 0
-    hitsCount = 0
-    shotsPerMinute = 0
-    accuracy = 0
-    waveTime = 0
+    bulletCount = 0;
+    timerValue = 0;
+    hitsCount = 0;
+    shotsPerMinute = 0;
+    accuracy = 0;
+    waveTime = 0;
+    ufosDusted = 0;
 
     displayGameOver();
     displayLevelUp();
@@ -480,6 +482,7 @@ function checkBulletCollisions(i) {
   // First, check for collision between bullet and UFO
   if (ufo && bullets[i].hits(ufo)) {
     console.log("Bullet hit UFO");
+    ufosDusted++;
     if (!ufoHitSound.isPlaying()) {
       ufoHitSound.play();
     }
@@ -704,6 +707,7 @@ function createOutputTable(){
   myTable.addColumn("wave_time");
   myTable.addColumn("level")
   myTable.addColumn("cooldown_used");
+  myTable.addColumn("ufos_dusted");
   
   }
   
@@ -716,6 +720,7 @@ function createOutputTable(){
     row.set("wave_time", waveTimeInput);
     row.set("level",level);
     row.set("cooldown_used",useCooldown);
+    row.set("ufos_dusted",ufosDusted);
     
   }
   
